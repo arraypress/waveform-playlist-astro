@@ -1,0 +1,165 @@
+---
+/**
+ * examples/basic.astro
+ * --------------------
+ *
+ * Reference page showing every <WaveformPlaylist> usage pattern this
+ * package supports. Copy/paste into your own Astro project's
+ * `src/pages/` directory to play with the component live.
+ *
+ * Each section is a self-contained demonstration with a short
+ * description of when you'd reach for it.
+ */
+import WaveformPlaylist from '@arraypress/waveform-playlist-astro';
+import '@arraypress/waveform-player/dist/waveform-player.css';
+import '@arraypress/waveform-playlist/dist/waveform-playlist.css';
+import wfpJsUrl from '@arraypress/waveform-player/dist/waveform-player.min.js?url';
+import wfplJsUrl from '@arraypress/waveform-playlist/dist/waveform-playlist.js?url';
+---
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>WaveformPlaylist Astro — examples</title>
+		<!-- Load the core libraries once, player BEFORE playlist. The
+		     wrapper does not do this for you because you might want a CDN,
+		     a self-hosted asset, or the bundled npm path. -->
+		<script src={wfpJsUrl} is:inline></script>
+		<script src={wfplJsUrl} is:inline></script>
+	</head>
+
+	<body style="max-width: 720px; margin: 2rem auto; font-family: system-ui;">
+		<h1>WaveformPlaylist Astro examples</h1>
+
+		<section>
+			<h2>1. Podcast with chapters</h2>
+			<p>A single track with clickable chapter timestamps. Chapters
+			   double as waveform markers when there's only one track.</p>
+			<WaveformPlaylist
+				tracks={[
+					{
+						url: '/audio/episode-42.mp3',
+						title: 'Episode 42: AI Revolution',
+						subtitle: 'with Dr. Sarah Chen',
+						artwork: '/img/episode-42.jpg',
+						chapters: [
+							{ time: 0, label: 'Introduction' },
+							{ time: 330, label: 'Main Topic' },
+							{ time: 2700, label: 'Q&A Session' },
+						],
+					},
+				]}
+			/>
+		</section>
+
+		<section>
+			<h2>2. Music playlist with auto-advance</h2>
+			<p>Multiple tracks with artwork and durations. <code>continuous</code>
+			   plays the next track automatically when one ends.</p>
+			<WaveformPlaylist
+				continuous
+				showPlayState
+				tracks={[
+					{
+						url: '/audio/summer-vibes.mp3',
+						title: 'Summer Vibes',
+						subtitle: 'Beach Sounds',
+						artwork: '/img/cover1.jpg',
+						duration: '3:45',
+					},
+					{
+						url: '/audio/night-drive.mp3',
+						title: 'Night Drive',
+						subtitle: 'Synthwave Mix',
+						artwork: '/img/cover2.jpg',
+						duration: '4:12',
+					},
+				]}
+			/>
+		</section>
+
+		<section>
+			<h2>3. Course modules with chapters</h2>
+			<p>Multi-track list where each lesson expands its own chapters
+			   under the active track.</p>
+			<WaveformPlaylist
+				continuous
+				expandChapters
+				tracks={[
+					{
+						url: '/audio/lesson-1.mp3',
+						title: 'Module 1: Introduction',
+						subtitle: 'Getting Started',
+						chapters: [
+							{ time: 0, label: 'Welcome' },
+							{ time: 600, label: 'Setup' },
+						],
+					},
+					{
+						url: '/audio/lesson-2.mp3',
+						title: 'Module 2: Core Concepts',
+						chapters: [
+							{ time: 0, label: 'Theory' },
+							{ time: 900, label: 'Practice' },
+						],
+					},
+				]}
+			/>
+		</section>
+
+		<section>
+			<h2>4. Minimal button layout</h2>
+			<p>A compact button switcher — ideal for beat/sample showcases.</p>
+			<WaveformPlaylist
+				layout="minimal"
+				tracks={[
+					{ url: '/beats/trap.mp3', title: 'Trap Beat' },
+					{ url: '/beats/lofi.mp3', title: 'Lo-Fi' },
+					{ url: '/beats/boombap.mp3', title: 'Boom Bap' },
+				]}
+			/>
+		</section>
+
+		<section>
+			<h2>5. Styled + forwarded player options</h2>
+			<p>Bar-style waveform, custom colours, BPM badge, and a playback
+			   speed menu — all forwarded to the embedded player.</p>
+			<WaveformPlaylist
+				waveformStyle="bars"
+				barWidth={3}
+				barSpacing={1}
+				height={80}
+				colorPreset="dark"
+				progressColor="rgba(168,85,247,0.9)"
+				showBPM
+				showPlaybackSpeed
+				playbackRates={[0.5, 0.75, 1, 1.25, 1.5, 2]}
+				chapterMarkerColor="rgba(168,85,247,0.8)"
+				tracks={[
+					{
+						url: '/audio/mix.mp3',
+						title: 'The Long Mix',
+						subtitle: 'Producer X',
+						chapters: [
+							{ time: 0, label: 'Warm-up' },
+							{ time: 480, label: 'Peak', color: '#a855f7' },
+						],
+					},
+				]}
+			/>
+		</section>
+
+		<section>
+			<h2>6. Lazy-mounted playlist</h2>
+			<p>Defers building the UI (and decoding the first track) until the
+			   playlist scrolls into view.</p>
+			<WaveformPlaylist
+				lazy
+				tracks={[
+					{ url: '/audio/sample-1.mp3', title: 'Sample 1' },
+					{ url: '/audio/sample-2.mp3', title: 'Sample 2' },
+				]}
+			/>
+		</section>
+	</body>
+</html>

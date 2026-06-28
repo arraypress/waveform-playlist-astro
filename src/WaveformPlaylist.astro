@@ -1,0 +1,484 @@
+---
+/**
+ * WaveformPlaylist.astro
+ * ----------------------
+ *
+ * Astro component wrapper around `@arraypress/waveform-playlist`. Exposes
+ * the playlist's own options — plus the WaveformPlayer options the
+ * playlist forwards to its embedded player — as typed props, and renders
+ * the `data-*` markup contract the library's auto-initialiser expects:
+ * a `[data-waveform-playlist]` container with one `[data-track]` child
+ * per track and one `[data-chapter]` child per chapter.
+ *
+ * ## Why a wrapper?
+ *
+ * The core library is intentionally framework-agnostic vanilla JS. That
+ * works great everywhere (WordPress, Shopify, plain HTML) but means Astro
+ * users have to hand-author the nested `data-*` markup by hand:
+ *
+ * ```astro
+ * <div data-waveform-playlist data-continuous="true">
+ *   <div data-track data-url="/ep1.mp3" data-title="Episode 1">
+ *     <div data-chapter data-time="0">Intro</div>
+ *     <div data-chapter data-time="330">Main topic</div>
+ *   </div>
+ * </div>
+ * ```
+ *
+ * This wrapper turns that into a typed `tracks` array:
+ *
+ * ```astro
+ * <WaveformPlaylist
+ *   continuous
+ *   tracks={[
+ *     {
+ *       url: '/ep1.mp3',
+ *       title: 'Episode 1',
+ *       chapters: [
+ *         { time: 0, label: 'Intro' },
+ *         { time: 330, label: 'Main topic' },
+ *       ],
+ *     },
+ *   ]}
+ * />
+ * ```
+ *
+ * Typed props, correct stringification, omission semantics that let the
+ * library's defaults shine through.
+ *
+ * ## Setup
+ *
+ * Load BOTH the core player and the playlist JS + CSS once in your layout
+ * (the wrapper intentionally does NOT do this for you — you may want a
+ * CDN, a self-hosted asset, or the bundled npm path). Order matters: the
+ * player must load before the playlist.
+ *
+ * ```astro
+ * ---
+ * import '@arraypress/waveform-player/dist/waveform-player.css';
+ * import '@arraypress/waveform-playlist/dist/waveform-playlist.css';
+ * import wfpJsUrl from '@arraypress/waveform-player/dist/waveform-player.min.js?url';
+ * import wfplJsUrl from '@arraypress/waveform-playlist/dist/waveform-playlist.js?url';
+ * ---
+ * <script src={wfpJsUrl} is:inline></script>
+ * <script src={wfplJsUrl} is:inline></script>
+ * ```
+ *
+ * Then drop `<WaveformPlaylist>` anywhere.
+ *
+ * ## Lazy mounting
+ *
+ * Passing `lazy` switches the init attribute from `data-waveform-playlist`
+ * to `data-waveform-playlist-lazy` and ships a one-time
+ * `IntersectionObserver` script that promotes lazy mounts when they
+ * approach the viewport. The script self-deduplicates via
+ * `window.__wfplLazyMountBound` so multiple `<WaveformPlaylist lazy>`
+ * instances on the same page reuse a single observer. If the core
+ * library's script hasn't loaded yet, the lazy script waits for
+ * `window.WaveformPlaylist` via a small bounded retry rather than
+ * silently never mounting.
+ *
+ * ## Astro View Transitions
+ *
+ * The core library auto-initialises on `DOMContentLoaded` only. Under
+ * Astro View Transitions, client-side navigations swap the DOM without
+ * re-firing `DOMContentLoaded`, so a freshly-rendered (non-lazy) playlist
+ * would never be mounted after navigation. To cover that, non-lazy
+ * instances ship a tiny one-time script that re-runs the core's
+ * (idempotent) `WaveformPlaylist.init()` on every `astro:page-load`.
+ * It self-deduplicates via `window.__wfplInitBound`, and the core skips
+ * any container already flagged `data-waveform-playlist-initialized`, so
+ * the re-init is safe to call repeatedly.
+ *
+ * @example Podcast with chapters
+ *   <WaveformPlaylist
+ *     tracks={[
+ *       {
+ *         url: '/audio/ep42.mp3',
+ *         title: 'Episode 42',
+ *         subtitle: 'with Dr. Sarah Chen',
+ *         artwork: '/img/ep42.jpg',
+ *         chapters: [
+ *           { time: 0, label: 'Intro' },
+ *           { time: 330, label: 'Main Topic' },
+ *           { time: 2700, label: 'Q&A' },
+ *         ],
+ *       },
+ *     ]}
+ *   />
+ *
+ * @example Music playlist (auto-advance)
+ *   <WaveformPlaylist
+ *     continuous
+ *     showPlayState
+ *     tracks={[
+ *       { url: '/audio/1.mp3', title: 'Summer Vibes', duration: '3:45' },
+ *       { url: '/audio/2.mp3', title: 'Night Drive', duration: '4:12' },
+ *     ]}
+ *   />
+ *
+ * @example Minimal button layout
+ *   <WaveformPlaylist
+ *     layout="minimal"
+ *     tracks={[
+ *       { url: '/beats/1.mp3', title: 'Trap Beat' },
+ *       { url: '/beats/2.mp3', title: 'Lo-Fi' },
+ *     ]}
+ *   />
+ */
+
+import type { WaveformPlaylistProps } from './types';
+
+const {
+	// ── Playlist-specific options ──────────────────────────────────────
+	layout,
+	continuous,
+	expandChapters,
+	showDuration,
+	showChapterMarkers,
+	chapterMarkerColor,
+	showPlayState,
+	// ── Forwarded player options (inherited by the embedded player) ────
+	preload,
+	waveformStyle,
+	height,
+	samples,
+	barWidth,
+	barSpacing,
+	barRadius,
+	// Colours
+	colorPreset,
+	waveformColor,
+	progressColor,
+	buttonColor,
+	buttonHoverColor,
+	textColor,
+	textSecondaryColor,
+	backgroundColor,
+	borderColor,
+	// Playback controls
+	playbackRate,
+	showPlaybackSpeed,
+	playbackRates,
+	// UI toggles
+	showControls,
+	showInfo,
+	showTime,
+	showHoverTime,
+	showBPM,
+	bpm,
+	buttonAlign,
+	buttonStyle,
+	// Accessibility + error UI
+	accessibleSeek,
+	seekLabel,
+	errorText,
+	// Markers
+	showMarkers,
+	// Behaviour
+	autoplay,
+	singlePlay,
+	playOnSeek,
+	enableMediaSession,
+	// Icons
+	playIcon,
+	pauseIcon,
+	// ── Tracks (required) ──────────────────────────────────────────────
+	tracks,
+	// ── Astro extras ───────────────────────────────────────────────────
+	lazy = false,
+	id,
+	class: className,
+	style,
+} = Astro.props as WaveformPlaylistProps;
+
+/**
+ * Build the container's data-attribute map programmatically so an omitted
+ * prop never emits an attribute. This is the contract that lets the
+ * library apply its own defaults when a prop is left out, and keeps the
+ * resulting DOM tidy.
+ *
+ * Per-track content (`url`, `title`, `subtitle`, `artwork`, `album`,
+ * `markers`) and `audioMode` are deliberately NOT serialised here — the
+ * playlist owns those at the `[data-track]` level and strips any
+ * container-level copy, so they would be dead attributes.
+ *
+ * @type {Record<string, string>}
+ */
+const data: Record<string, string> = {};
+
+/**
+ * Helper — set a string attr only when the value is non-null/non-undefined.
+ * Empty strings are preserved (the library treats them as "set but blank").
+ */
+const setStr = (key: string, value: string | undefined | null): void => {
+	if (value === undefined || value === null) return;
+	data[key] = value;
+};
+
+/**
+ * Helper — set a numeric attr only when the value is a finite number.
+ */
+const setNum = (key: string, value: number | undefined | null): void => {
+	if (value === undefined || value === null) return;
+	if (typeof value !== 'number' || !Number.isFinite(value)) return;
+	data[key] = String(value);
+};
+
+/**
+ * Helper — set a boolean attr as the string `'true'` / `'false'`.
+ * Required because the playlist compares against `=== 'true'` (continuous,
+ * showChapterMarkers) and `!== 'false'` (expandChapters, showDuration,
+ * showPlayState), and the player against `=== 'true'`.
+ */
+const setBool = (key: string, value: boolean | undefined | null): void => {
+	if (value === undefined || value === null) return;
+	data[key] = value ? 'true' : 'false';
+};
+
+// ─── Playlist-specific options ─────────────────────────────────────────────
+setStr('data-layout', layout ?? null);
+setBool('data-continuous', continuous);
+setBool('data-expand-chapters', expandChapters);
+setBool('data-show-duration', showDuration);
+// `showChapterMarkers` is `boolean | null` — `null` (the default) omits the
+// attribute so the playlist applies its content-aware smart default.
+setBool('data-show-chapter-markers', showChapterMarkers);
+setStr('data-chapter-marker-color', chapterMarkerColor ?? null);
+setBool('data-show-play-state', showPlayState);
+
+// ─── Forwarded player options ──────────────────────────────────────────────
+// These are read off the container by the playlist and passed straight
+// through to the embedded WaveformPlayer instance.
+setStr('data-preload', preload ?? null);
+
+// Waveform visualisation
+setStr('data-waveform-style', waveformStyle ?? null);
+setNum('data-height', height);
+setNum('data-samples', samples);
+setNum('data-bar-width', barWidth);
+setNum('data-bar-spacing', barSpacing);
+setNum('data-bar-radius', barRadius);
+
+// Colours — `colorPreset` is `'dark' | 'light' | null`; only emit non-null.
+if (colorPreset === 'dark' || colorPreset === 'light') {
+	data['data-color-preset'] = colorPreset;
+}
+// Colours accept an array of gradient stops — JSON-encode those so the
+// library's data-attribute parser can rebuild the gradient.
+if (Array.isArray(waveformColor)) data['data-waveform-color'] = JSON.stringify(waveformColor);
+else setStr('data-waveform-color', waveformColor ?? null);
+if (Array.isArray(progressColor)) data['data-progress-color'] = JSON.stringify(progressColor);
+else setStr('data-progress-color', progressColor ?? null);
+setStr('data-button-color', buttonColor ?? null);
+setStr('data-button-hover-color', buttonHoverColor ?? null);
+setStr('data-text-color', textColor ?? null);
+setStr('data-text-secondary-color', textSecondaryColor ?? null);
+setStr('data-background-color', backgroundColor ?? null);
+setStr('data-border-color', borderColor ?? null);
+
+// Playback controls
+setNum('data-playback-rate', playbackRate);
+setBool('data-show-playback-speed', showPlaybackSpeed);
+if (Array.isArray(playbackRates) && playbackRates.length > 0) {
+	data['data-playback-rates'] = JSON.stringify(playbackRates);
+}
+
+// UI toggles
+setBool('data-show-controls', showControls);
+setBool('data-show-info', showInfo);
+setBool('data-show-time', showTime);
+setBool('data-show-hover-time', showHoverTime);
+// The library's data-attribute parser reads `data-show-bpm` (lowercased
+// `bpm`), NOT `data-show-b-p-m`. Get this wrong and BPM never displays.
+setBool('data-show-bpm', showBPM);
+setNum('data-bpm', bpm);
+setStr('data-button-align', buttonAlign ?? null);
+setStr('data-button-style', buttonStyle ?? null);
+
+// Accessibility + error UI
+setBool('data-accessible-seek', accessibleSeek);
+setStr('data-seek-label', seekLabel ?? null);
+setStr('data-error-text', errorText ?? null);
+
+// Markers (the per-track markers live on each `[data-track]`; this is the
+// player-level toggle for whether markers render at all).
+setBool('data-show-markers', showMarkers);
+
+// Behaviour
+setBool('data-autoplay', autoplay);
+setBool('data-single-play', singlePlay);
+setBool('data-play-on-seek', playOnSeek);
+setBool('data-enable-media-session', enableMediaSession);
+
+// Icons — pass icon markup verbatim. Consumers are responsible for ensuring
+// the HTML they hand us is safe to inject.
+setStr('data-play-icon', playIcon ?? null);
+setStr('data-pause-icon', pauseIcon ?? null);
+
+/**
+ * The init attribute — the library auto-init scans for
+ * `[data-waveform-playlist]`. For lazy mounting we emit
+ * `[data-waveform-playlist-lazy]` instead and let our companion script
+ * promote it on viewport entry.
+ */
+const initAttr = lazy ? 'data-waveform-playlist-lazy' : 'data-waveform-playlist';
+
+const trackList = Array.isArray(tracks) ? tracks : [];
+---
+
+<div
+	{...{ [initAttr]: '' }}
+	{...data}
+	id={id}
+	class:list={['wfpl-host', className]}
+	style={style}
+>
+	{trackList.map((track) => (
+		<div
+			data-track
+			data-url={track.url}
+			data-title={track.title}
+			data-subtitle={track.subtitle}
+			data-artwork={track.artwork}
+			data-album={track.album}
+			data-duration={track.duration}
+			data-markers={
+				track.markers && track.markers.length > 0
+					? JSON.stringify(track.markers)
+					: undefined
+			}
+		>
+			{(track.chapters ?? []).map((chapter) => (
+				<div data-chapter data-time={String(chapter.time)} data-color={chapter.color}>
+					{chapter.label}
+				</div>
+			))}
+		</div>
+	))}
+</div>
+
+{lazy ? (
+	<script is:inline>
+		/**
+		 * Lazy-mount watcher for `<WaveformPlaylist lazy>` instances.
+		 *
+		 * Installs a single `IntersectionObserver` (deduplicated via a
+		 * `window` flag) that promotes `data-waveform-playlist-lazy` to
+		 * `data-waveform-playlist` once an element approaches the viewport,
+		 * then triggers `WaveformPlaylist.init()` to mount it.
+		 *
+		 * The 200 px `rootMargin` gives the browser headroom to build the
+		 * UI and decode the first track's audio before the user actually
+		 * scrolls the playlist into view.
+		 *
+		 * Re-runs on Astro `astro:page-load` so cross-page navigations pick
+		 * up newly-rendered lazy mounts.
+		 *
+		 * If the core library's script hasn't installed
+		 * `window.WaveformPlaylist` yet, we wait for it via a small bounded
+		 * retry instead of returning and never mounting.
+		 */
+		(function () {
+			if (window.__wfplLazyMountBound) return;
+			window.__wfplLazyMountBound = true;
+
+			var MAX_WAIT_ATTEMPTS = 20; // ~1s total at 50ms between attempts
+
+			function observeLazyMounts() {
+				var targets = document.querySelectorAll('[data-waveform-playlist-lazy]');
+				if (!targets.length) return;
+
+				var io = new IntersectionObserver(
+					function (entries) {
+						entries.forEach(function (entry) {
+							if (!entry.isIntersecting) return;
+							var el = entry.target;
+							el.removeAttribute('data-waveform-playlist-lazy');
+							el.setAttribute('data-waveform-playlist', '');
+							io.unobserve(el);
+							try {
+								window.WaveformPlaylist && window.WaveformPlaylist.init();
+							} catch (err) {
+								console.error('[WaveformPlaylistAstro] init failed:', err);
+							}
+						});
+					},
+					{ rootMargin: '200px 0px 200px 0px', threshold: 0.01 }
+				);
+
+				targets.forEach(function (target) {
+					io.observe(target);
+				});
+			}
+
+			function mountLazy() {
+				// Core already present — wire up the observer immediately.
+				if (window.WaveformPlaylist) {
+					observeLazyMounts();
+					return;
+				}
+				// Core script not loaded yet. Poll a bounded number of times
+				// for `window.WaveformPlaylist` rather than silently giving up.
+				var attempts = 0;
+				(function waitForCore() {
+					if (window.WaveformPlaylist) {
+						observeLazyMounts();
+						return;
+					}
+					if (++attempts > MAX_WAIT_ATTEMPTS) {
+						console.warn(
+							'[WaveformPlaylistAstro] window.WaveformPlaylist not found after ' +
+								MAX_WAIT_ATTEMPTS +
+								' attempts; lazy playlists will not mount. Did you load ' +
+								"@arraypress/waveform-playlist's script (after the player's)?"
+						);
+						return;
+					}
+					setTimeout(waitForCore, 50);
+				})();
+			}
+
+			document.addEventListener('astro:page-load', mountLazy);
+			if (document.readyState !== 'loading') {
+				mountLazy();
+			} else {
+				document.addEventListener('DOMContentLoaded', mountLazy);
+			}
+		})();
+	</script>
+) : (
+	<script is:inline>
+		/**
+		 * View Transitions re-init for non-lazy `<WaveformPlaylist>` instances.
+		 *
+		 * The core library auto-initialises on `DOMContentLoaded` only.
+		 * Under Astro View Transitions, client-side navigations swap the DOM
+		 * without re-firing `DOMContentLoaded`, so freshly-rendered
+		 * `[data-waveform-playlist]` containers would never be mounted after
+		 * a navigation. Re-run the core initialiser on every
+		 * `astro:page-load`.
+		 *
+		 * `WaveformPlaylist.init()` is idempotent — it skips any container
+		 * already flagged `data-waveform-playlist-initialized` (which the
+		 * core sets on first mount) — so calling it repeatedly only mounts
+		 * the new ones.
+		 *
+		 * Deduplicated via `window.__wfplInitBound` so multiple non-lazy
+		 * instances bind a single shared `astro:page-load` listener that
+		 * persists across navigations.
+		 */
+		(function () {
+			if (window.__wfplInitBound) return;
+			window.__wfplInitBound = true;
+
+			document.addEventListener('astro:page-load', function () {
+				try {
+					window.WaveformPlaylist && window.WaveformPlaylist.init();
+				} catch (err) {
+					console.error('[WaveformPlaylistAstro] init failed:', err);
+				}
+			});
+		})();
+	</script>
+)}
