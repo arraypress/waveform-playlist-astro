@@ -96,7 +96,7 @@
  *       {
  *         url: '/audio/ep42.mp3',
  *         title: 'Episode 42',
- *         subtitle: 'with Dr. Sarah Chen',
+ *         artist: 'with Dr. Sarah Chen',
  *         artwork: '/img/ep42.jpg',
  *         chapters: [
  *           { time: 0, label: 'Intro' },
@@ -198,7 +198,7 @@ const {
  * library apply its own defaults when a prop is left out, and keeps the
  * resulting DOM tidy.
  *
- * Per-track content (`url`, `title`, `subtitle`, `artwork`, `album`,
+ * Per-track content (`url`, `title`, `artist`, `artwork`, `album`,
  * `markers`) and `audioMode` are deliberately NOT serialised here — the
  * playlist owns those at the `[data-track]` level and strips any
  * container-level copy, so they would be dead attributes.
@@ -339,7 +339,7 @@ const trackList = Array.isArray(tracks) ? tracks : [];
 			data-track
 			data-url={track.url}
 			data-title={track.title}
-			data-subtitle={track.subtitle}
+			data-artist={track.artist}
 			data-artwork={track.artwork}
 			data-album={track.album}
 			data-duration={track.duration}

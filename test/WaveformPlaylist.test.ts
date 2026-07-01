@@ -184,12 +184,12 @@ describe('<WaveformPlaylist> — minimal props', () => {
 	});
 
 	it('does NOT emit per-track / playlist-owned attrs on the container', async () => {
-		// url/title/subtitle/artwork/album/markers/audioMode belong on the
+		// url/title/artist/artwork/album/markers/audioMode belong on the
 		// tracks, not the container — the playlist strips container copies.
 		const tag = containerTag(await render({ tracks: ONE_TRACK }));
 		expectNoAttr(tag, 'data-url');
 		expectNoAttr(tag, 'data-title');
-		expectNoAttr(tag, 'data-subtitle');
+		expectNoAttr(tag, 'data-artist');
 		expectNoAttr(tag, 'data-artwork');
 		expectNoAttr(tag, 'data-album');
 		expectNoAttr(tag, 'data-markers');
@@ -407,7 +407,7 @@ describe('<WaveformPlaylist> — tracks', () => {
 				{
 					url: '/audio/ep.mp3',
 					title: 'Episode 1',
-					subtitle: 'with Guest',
+					artist: 'with Guest',
 					artwork: '/img/ep.jpg',
 					album: 'Season 1',
 					duration: '42:00',
@@ -417,7 +417,7 @@ describe('<WaveformPlaylist> — tracks', () => {
 		const [track] = trackTags(html);
 		expect(getAttr(track, 'data-url')).toBe('/audio/ep.mp3');
 		expect(getAttr(track, 'data-title')).toBe('Episode 1');
-		expect(getAttr(track, 'data-subtitle')).toBe('with Guest');
+		expect(getAttr(track, 'data-artist')).toBe('with Guest');
 		expect(getAttr(track, 'data-artwork')).toBe('/img/ep.jpg');
 		expect(getAttr(track, 'data-album')).toBe('Season 1');
 		expect(getAttr(track, 'data-duration')).toBe('42:00');
@@ -428,7 +428,7 @@ describe('<WaveformPlaylist> — tracks', () => {
 		const [track] = trackTags(html);
 		expect(getAttr(track, 'data-url')).toBe('/a.mp3');
 		expectNoAttr(track, 'data-title');
-		expectNoAttr(track, 'data-subtitle');
+		expectNoAttr(track, 'data-artist');
 		expectNoAttr(track, 'data-artwork');
 		expectNoAttr(track, 'data-album');
 		expectNoAttr(track, 'data-duration');
@@ -617,7 +617,7 @@ describe('<WaveformPlaylist> — realistic combined usage', () => {
 				{
 					url: '/audio/ep1.mp3',
 					title: 'Episode 1',
-					subtitle: 'with Guest',
+					artist: 'with Guest',
 					artwork: '/img/ep1.jpg',
 					album: 'Season 1',
 					duration: '42:00',

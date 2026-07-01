@@ -21,7 +21,7 @@ import wfplJsUrl from '@arraypress/waveform-playlist/dist/waveform-playlist.js?u
     {
       url: '/audio/episode-42.mp3',
       title: 'Episode 42',
-      subtitle: 'with Dr. Sarah Chen',
+      artist: 'with Dr. Sarah Chen',
       chapters: [
         { time: 0, label: 'Intro' },
         { time: 330, label: 'Main Topic' },
@@ -80,7 +80,7 @@ A single track with clickable chapter timestamps. With one track, chapters also 
     {
       url: '/audio/episode.mp3',
       title: 'Episode 42',
-      subtitle: 'with Guest',
+      artist: 'with Guest',
       artwork: '/img/cover.jpg',
       chapters: [
         { time: 0, label: 'Intro' },
@@ -167,7 +167,7 @@ Container options are emitted as `data-*` on the playlist container; per-track c
 | ---------- | -------------------------------------------------------- | ----------- |
 | `url`      | `string`                                                 | Audio file URL. |
 | `title`    | `string`                                                 | Track title (defaults to a prettified filename). |
-| `subtitle` | `string`                                                 | Subtitle / artist / description. |
+| `artist`   | `string`                                                 | Artist / description. |
 | `artwork`  | `string`                                                 | Artwork image URL. |
 | `album`    | `string`                                                 | Album name (Media Session API). |
 | `duration` | `string`                                                 | Display duration, e.g. `'3:45'`. |

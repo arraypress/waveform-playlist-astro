@@ -27,12 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `buttonAlign`, `buttonStyle`, `accessibleSeek`, `seekLabel`,
   `errorText`, `showMarkers`, `autoplay`, `singlePlay`, `playOnSeek`,
   `enableMediaSession`, `preload`, `playIcon`, `pauseIcon`. The
-  per-track content fields (`url`, `title`, `subtitle`, `artwork`,
+  per-track content fields (`url`, `title`, `artist`, `artwork`,
   `album`, `markers`) live on each `tracks` entry instead, and the
   player's `layout` / `audioMode` are intentionally not exposed (the
   playlist owns `data-layout` and always drives a self-mode player).
 - A typed `tracks` array (`WaveformPlaylistTrackInput[]`) with per-track
-  `url`, `title`, `subtitle`, `artwork`, `album`, `duration`, `markers`,
+  `url`, `title`, `artist`, `artwork`, `album`, `duration`, `markers`,
   and `chapters` (`{ time, label, color? }`).
 - Astro-specific `lazy` prop that switches the init attribute to
   `data-waveform-playlist-lazy` and ships a single deduplicated

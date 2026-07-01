@@ -88,7 +88,7 @@ type PlaylistContainerOptions = Pick<
  * inherited from the player core's {@link WaveformPlayerOptions}. Several
  * groups are removed:
  *
- *  - Per-track content (`url`, `src`, `title`, `subtitle`, `artwork`,
+ *  - Per-track content (`url`, `src`, `title`, `artist`, `artwork`,
  *    `album`, `markers`, `waveform`) — these belong on each entry of the
  *    {@link WaveformPlaylistProps.tracks} array, not the container. The
  *    playlist strips any container-level copy.
@@ -108,7 +108,7 @@ type ForwardedPlayerOptions = Omit<
 	| 'url'
 	| 'src'
 	| 'title'
-	| 'subtitle'
+	| 'artist'
 	| 'artwork'
 	| 'album'
 	| 'markers'
@@ -141,8 +141,8 @@ export interface WaveformPlaylistTrackInput {
 	url?: string;
 	/** Track title (defaults to a prettified filename when omitted). */
 	title?: string;
-	/** Subtitle / artist / description. */
-	subtitle?: string;
+	/** Artist / description. */
+	artist?: string;
 	/** Artwork image URL. */
 	artwork?: string;
 	/** Album name (forwarded to the Media Session API). */
