@@ -150,12 +150,6 @@ const {
 	colorPreset,
 	waveformColor,
 	progressColor,
-	buttonColor,
-	buttonHoverColor,
-	textColor,
-	textSecondaryColor,
-	backgroundColor,
-	borderColor,
 	// Playback controls
 	playbackRate,
 	showPlaybackSpeed,
@@ -270,12 +264,6 @@ if (Array.isArray(waveformColor)) data['data-waveform-color'] = JSON.stringify(w
 else setStr('data-waveform-color', waveformColor ?? null);
 if (Array.isArray(progressColor)) data['data-progress-color'] = JSON.stringify(progressColor);
 else setStr('data-progress-color', progressColor ?? null);
-setStr('data-button-color', buttonColor ?? null);
-setStr('data-button-hover-color', buttonHoverColor ?? null);
-setStr('data-text-color', textColor ?? null);
-setStr('data-text-secondary-color', textSecondaryColor ?? null);
-setStr('data-background-color', backgroundColor ?? null);
-setStr('data-border-color', borderColor ?? null);
 
 // Playback controls
 setNum('data-playback-rate', playbackRate);
