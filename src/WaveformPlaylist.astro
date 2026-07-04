@@ -166,7 +166,13 @@ const {
 	// Accessibility + error UI
 	accessibleSeek,
 	seekLabel,
+	seekValueText,
+	playPauseLabel,
+	speedLabel,
 	errorText,
+	// Metadata / labels
+	artworkAlt,
+	unknownTrackText,
 	// Markers
 	showMarkers,
 	// Behaviour
@@ -287,7 +293,14 @@ setStr('data-button-style', buttonStyle ?? null);
 // Accessibility + error UI
 setBool('data-accessible-seek', accessibleSeek);
 setStr('data-seek-label', seekLabel ?? null);
+setStr('data-seek-value-text', seekValueText ?? null);
+setStr('data-play-pause-label', playPauseLabel ?? null);
+setStr('data-speed-label', speedLabel ?? null);
 setStr('data-error-text', errorText ?? null);
+
+// Metadata / labels
+setStr('data-artwork-alt', artworkAlt ?? null);
+setStr('data-unknown-track-text', unknownTrackText ?? null);
 
 // Markers (the per-track markers live on each `[data-track]`; this is the
 // player-level toggle for whether markers render at all).
