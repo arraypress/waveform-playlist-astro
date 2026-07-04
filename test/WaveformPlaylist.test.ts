@@ -293,14 +293,10 @@ describe('<WaveformPlaylist> — forwarded player options', () => {
 				tracks: ONE_TRACK,
 				waveformColor: ['#fafafa', '#71717a'],
 				progressColor: 'rgba(168,85,247,0.9)',
-				buttonColor: 'white',
-				textColor: '#fff',
 			})
 		);
 		expect(getAttr(tag, 'data-waveform-color')).toBe(JSON.stringify(['#fafafa', '#71717a']));
 		expect(getAttr(tag, 'data-progress-color')).toBe('rgba(168,85,247,0.9)');
-		expect(getAttr(tag, 'data-button-color')).toBe('white');
-		expect(getAttr(tag, 'data-text-color')).toBe('#fff');
 	});
 
 	it('serialises playback controls (rate, speed toggle, rates array)', async () => {
