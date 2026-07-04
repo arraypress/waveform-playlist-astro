@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/waveform-playlist-astro",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Astro component wrapper for @arraypress/waveform-playlist — typed props, a typed tracks/chapters array, lazy-mount support, framework-idiomatic ergonomics.",
   "type": "module",
   "files": [
